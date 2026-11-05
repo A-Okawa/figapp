@@ -202,18 +202,16 @@ def press_save(new_name):
             out['window'] = title.value
             boxes = []
 
-            def child(hwnd, _):                            # the file name box: Edit in ComboBox in ComboBoxEx32
+            def child(hwnd, _):                            # the file name box: the Edit inside a ComboBox
                 cls = ctypes.create_unicode_buffer(64)
                 user32.GetClassNameW(hwnd, cls, 64)
                 if cls.value == 'Edit':
                     up = user32.GetParent(hwnd)
-                    up2 = user32.GetParent(up) if up else None
-                    c1, c2 = ctypes.create_unicode_buffer(64), ctypes.create_unicode_buffer(64)
+                    c1 = ctypes.create_unicode_buffer(64)
                     if up:
                         user32.GetClassNameW(up, c1, 64)
-                    if up2:
-                        user32.GetClassNameW(up2, c2, 64)
-                    if c1.value == 'ComboBox' and c2.value == 'ComboBoxEx32':
+                    out.setdefault('edits', []).append(c1.value)
+                    if c1.value == 'ComboBox':
                         boxes.append(hwnd)
                 return True
 

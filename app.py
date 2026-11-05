@@ -78,6 +78,9 @@ st.set_page_config(page_title='Figure app', page_icon='📈', layout='wide')
 # 古い Streamlit（1.32 など）でも動くように：ボタンの幅の指定と popover の有無を吸収する
 WIDE = {'width': 'stretch'} if 'width' in inspect.signature(st.button).parameters else {'use_container_width': True}
 popover = getattr(st, 'popover', None) or st.expander
+# 保存ボタンを押しても描き直さない（on_click='ignore' がある Streamlit だけ）。押すたびに描き直すと、PDF などを
+# 押したときに作る版（1.52 以降）では作りかけの番号が変わり、続けて別の形式を保存すると「見つからない」で保存できないことがある
+DL = {'on_click': 'ignore'} if 'ignore' in str(inspect.signature(st.download_button).parameters['on_click'].annotation) else {}
 OLD_ST = tuple(int(x) for x in re.findall(r'\d+', st.__version__)[:2]) < (1, 40)   # 古い版は画像を列の幅に収めない
 ss = st.session_state
 
@@ -372,7 +375,7 @@ if c2.button(ui('デモデータも', 'With demo data'), disabled=pname is None 
 tname = sb.selectbox(ui('入力用テンプレート', 'Input template'), list(TEMPLATES), index=None, placeholder=ui('選ぶ…', 'Choose…'), key='tpl_pick')
 if tname:
     sb.download_button(ui('テンプレートを保存', 'Save the template'), open(os.path.join(PRESET_DIR, TEMPLATES[tname]), 'rb').read(),
-                       file_name=TEMPLATES[tname].replace('_template', ''), mime='text/csv')
+                       file_name=TEMPLATES[tname].replace('_template', ''), mime='text/csv', **DL)
 
 sb.divider()
 sb.subheader(ui('保存・読み込み', 'Save and open'))
@@ -1184,7 +1187,7 @@ with tabs[3]:
                         c2.error(ui('保存できませんでした：{e}', 'Could not save: {e}', e=e))
             if SHARED:
                 c2.download_button(ui('colors.csv を保存', 'Save colors.csv'), colors_csv(named_colors()), file_name='colors.csv',
-                                   mime='text/csv', key='colors_dl')
+                                   mime='text/csv', key='colors_dl', **DL)
 
 # ⑤ legend & notes
 with tabs[4]:
@@ -1345,7 +1348,7 @@ with tabs[6]:
                         '1 (as in Excel).', len_chk=len(chk)))
             st.dataframe(chk.rename(columns={'layer': ui('レイヤー', 'Layer'), 'check': ui('内容', 'Check'), 'csv': 'CSV', 'csv_row': ui('行', 'Row'), 'column': ui('列', 'Column'), 'series': ui('系列', 'Series'),
                                              'unit': ui('単位', 'Unit'), 'value': ui('値', 'Value'), 'detail': ui('詳しく', 'Details')}), height=320, hide_index=True)
-            st.download_button(ui('チェック結果（CSV）', 'Check results (CSV)'), chk.to_csv(index=False).encode('utf-8-sig'), file_name='checks.csv', mime='text/csv')
+            st.download_button(ui('チェック結果（CSV）', 'Check results (CSV)'), chk.to_csv(index=False).encode('utf-8-sig'), file_name='checks.csv', mime='text/csv', **DL)
             cand = {}
             for _, rr in chk.iterrows():           # 1 行で決まるもの（飛び離れた値など）だけ、選んで外せる
                 if rr['csv'] and rr['csv_row'] and ' ' not in rr['csv_row'] and rr['check'] != ui('数値でない／空', 'Not numeric / empty'):
@@ -1397,10 +1400,10 @@ with right:
         base = st.text_input(ui('保存するファイル名', 'File name'), value='figure', key='basename')
         dpi = int(cfg['figure'].get('dpi', 600))
         c1, c2, c3, c4 = st.columns(4)
-        c1.download_button('PDF', outs['pdf'], file_name=base + '.pdf', mime='application/pdf', **WIDE)
-        c2.download_button('SVG', outs['svg'], file_name=base + '.svg', mime='image/svg+xml', **WIDE)
-        c3.download_button('PNG', outs['png'], file_name=base + '.png', mime='image/png', **WIDE)
-        c4.download_button('TIFF', outs['tif'], file_name=base + '.tif', mime='image/tiff', **WIDE)
+        c1.download_button('PDF', outs['pdf'], file_name=base + '.pdf', mime='application/pdf', **WIDE, **DL)
+        c2.download_button('SVG', outs['svg'], file_name=base + '.svg', mime='image/svg+xml', **WIDE, **DL)
+        c3.download_button('PNG', outs['png'], file_name=base + '.png', mime='image/png', **WIDE, **DL)
+        c4.download_button('TIFF', outs['tif'], file_name=base + '.tif', mime='image/tiff', **WIDE, **DL)
         st.caption(ui('PNG・TIFF は {dpi} dpi（「大きさ・文字」タブで変更）。TIFF は RGB・LZW 圧縮・透明なし。', 'PNG and TIFF at {dpi} dpi (change it in the Size & text tab). TIFF: RGB, LZW compression, no '
                       'transparency.', dpi=dpi))
         c1, c2 = st.columns(2)
@@ -1410,9 +1413,9 @@ with right:
                 if c in allp:
                     allp[c] = pd.to_numeric(allp[c], errors='coerce').round().astype('Int64')
             c1.download_button(ui('描いた値（CSV）', 'Values drawn (CSV)'), allp.to_csv(index=False).encode('utf-8-sig'), file_name=base + '_plotted.csv',
-                               mime='text/csv', **WIDE)
+                               mime='text/csv', **WIDE, **DL)
         c2.download_button(ui('この図の設定（.json）', 'Settings of this figure (.json)'), json.dumps(cfg, ensure_ascii=False, indent=1).encode('utf-8'),
-                           file_name=base + '.json', mime='application/json', **WIDE)
+                           file_name=base + '.json', mime='application/json', **WIDE, **DL)
         fitd = [d for n_, d in (plotted or []) if n_.endswith(ui('（近似）', ' (fit)'))]
         if fitd:
             with st.expander(ui('近似の結果（係数と R²）', 'Fit results (coefficients and R²)'), expanded=True):
@@ -1475,10 +1478,10 @@ if files:
 _base = re.sub(r'[\\/:*?"<>|]+', '_', str(ss.get('basename') or 'figure')).strip() or 'figure'
 save_box.download_button(ui('作業ファイルを保存（設定＋CSV、.zip）', 'Save work file (settings + CSV files, .zip)'), fc.make_work_zip(cfg, files), file_name=f'{_base}_work.zip',
                          mime='application/zip', help=ui('設定と、読み込んでいる CSV をまとめて保存します。下の「作業ファイル（.zip）または設定（.json）を開く」で続きから再開できます。', 'Saves the settings together with the loaded CSV files. Carry on later with “Open a work file '
-                                                         '(.zip) or settings (.json)” below.'), **WIDE)
+                                                         '(.zip) or settings (.json)” below.'), **WIDE, **DL)
 save_box.download_button(ui('今の設定を保存（.json）', 'Save the current settings (.json)'), json.dumps(cfg, ensure_ascii=False, indent=1).encode('utf-8'),
                          file_name=f'{_base}_settings.json', mime='application/json',
-                         help=ui('見た目の設定だけ（CSV は入りません）。別のデータに同じ見た目を使い回すとき。', 'The look only (no CSV files), to reuse the same look on other data.'), **WIDE)
+                         help=ui('見た目の設定だけ（CSV は入りません）。別のデータに同じ見た目を使い回すとき。', 'The look only (no CSV files), to reuse the same look on other data.'), **WIDE, **DL)
 
 
 # ---------------------------------------------------------------------------------------------- keyboard shortcuts

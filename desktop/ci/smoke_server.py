@@ -25,10 +25,16 @@ fails = []
 report = []
 
 
+REPORT_FILE = os.path.join(OUT, f'smoke_server_{MODE}.txt')
+open(REPORT_FILE, 'w', encoding='utf-8').close()
+
+
 def ok(cond, what):
     line = ('OK   ' if cond else 'FAIL ') + what
     print(line, flush=True)
     report.append(line)
+    with open(REPORT_FILE, 'a', encoding='utf-8') as fh:            # 途中で止まっても、そこまでの結果が残る
+        fh.write(line + '\n')
     if not cond:
         fails.append(what)
 
@@ -69,7 +75,7 @@ def download(pg, label, ext):
     ok(good and len(data) > 100, f'download {label}: {dl.value.suggested_filename}, {len(data)} bytes')
 
 
-with sync_playwright() as p:
+def checks(p):
     browser = p.chromium.launch()
     pg = browser.new_page(viewport={'width': 1500, 'height': 1000}, accept_downloads=True)
 
@@ -143,7 +149,14 @@ with sync_playwright() as p:
         ok(not healthy(), 'server stopped after "Quit the app"')
     browser.close()
 
-with open(os.path.join(OUT, f'smoke_server_{MODE}.txt'), 'w', encoding='utf-8') as fh:
+
+with sync_playwright() as p:
+    try:
+        checks(p)
+    except Exception as e:  # noqa: BLE001
+        ok(False, f'stopped by an error: {e!r}'[:600])
+
+with open(REPORT_FILE, 'w', encoding='utf-8') as fh:
     fh.write('\n'.join(report) + '\n\nFAILED: ' + (', '.join(fails) if fails else 'none') + '\n')
 print('\nFAILED:', fails if fails else 'none')
 sys.exit(1 if fails else 0)
