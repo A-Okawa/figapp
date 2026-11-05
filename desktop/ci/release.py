@@ -41,8 +41,8 @@ def releases():
 def ensure(tag, title, draft, notes_file, only_draft=False):
     notes = open(notes_file, encoding='utf-8').read() if notes_file and os.path.exists(notes_file) else ''
     sha = os.environ.get('GITHUB_SHA', '')                 # a draft's tag is made at this commit when it is published
-    for r in releases():
-        if r['tag_name'] == tag:
+    for r in releases():                                   # a draft renamed to untagged-… is found by its title
+        if r['tag_name'] == tag or (r['draft'] and r['tag_name'].startswith('untagged-') and r['name'] == title):
             if only_draft and not r['draft']:
                 return ''
             change = {}
@@ -50,7 +50,8 @@ def ensure(tag, title, draft, notes_file, only_draft=False):
                 change['body'] = notes
             if r['draft'] and sha:
                 change['target_commitish'] = sha
-            if change:
+            if change or r['tag_name'] != tag:            # always with tag_name: without it GitHub renames a draft's tag
+                change['tag_name'] = tag                   # to untagged-…
                 call('PATCH', f'{API}/repos/{REPO}/releases/{r["id"]}', change)
             return r['id']
     new = {'tag_name': tag, 'name': title, 'body': notes, 'draft': draft == 'true', 'prerelease': False}
