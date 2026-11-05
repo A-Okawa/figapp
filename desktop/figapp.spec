@@ -34,16 +34,36 @@ if sys.platform == 'darwin':
 elif sys.platform == 'win32':
     hiddenimports += ['webview.platforms.winforms', 'webview.platforms.edgechromium', 'clr']
 
+# pyarrow は Streamlit と pandas が lib・compute・ipc だけを使う。どの部品からも使われない Flight・S3 などは入れない（約 50 MB 減る）。
+# Parquet・Dataset・Acero・Substrait は libarrow_python が読み込むので残す
+PYARROW_UNUSED = ['pyarrow.' + m for m in (
+    'flight', '_flight', '_s3fs', '_gcsfs', '_azurefs', '_hdfs', 'orc', '_orc', '_dataset_orc', 'cuda', '_cuda',
+    '_pyarrow_cpp_tests', 'tests', 'benchmark', '_parquet_encryption', '_dataset_parquet_encryption', 'parquet.encryption')]
+_DROP = ('flight', 'arrow_s3', '_s3fs', 'gcsfs', 'azurefs', 'hdfs', 'orc', 'cuda', 'cpp_tests', 'encryption')
+
+
+def _keep(dest):
+    d = dest.replace('\\', '/')
+    if not d.startswith('pyarrow/'):
+        return True
+    name = d.rsplit('/', 1)[-1].lower()
+    if d.startswith('pyarrow/include/') or d.startswith('pyarrow/tests/') or name.endswith(('.pyx', '.pxd', '.pxi', '.h', '.cc')):
+        return False
+    return not any(k in name for k in _DROP)
+
+
 a = Analysis(
     [os.path.join(DESK, 'launcher.py')],
     pathex=[ROOT, DESK],
     datas=datas,
     hiddenimports=hiddenimports,
     excludes=['tkinter', 'IPython', 'pytest', 'PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'gi', 'scipy', 'webview.platforms.qt',
-              'webview.platforms.gtk', 'webview.platforms.cef', 'webview.platforms.android'],
+              'webview.platforms.gtk', 'webview.platforms.cef', 'webview.platforms.android'] + PYARROW_UNUSED,
     module_collection_mode={m: 'py' for m in APP_MODULES},                  # .py のまま app.py の隣に置く
     noarchive=False,
 )
+a.binaries = [b for b in a.binaries if _keep(b[0])]
+a.datas = [d for d in a.datas if _keep(d[0])]
 pyz = PYZ(a.pure)
 
 icon = os.path.join(DESK, 'icons', 'figapp.icns' if sys.platform == 'darwin' else 'figapp.ico')

@@ -335,6 +335,32 @@ def first_instance():
     return ctypes.get_last_error() != 183                                     # ERROR_ALREADY_EXISTS
 
 
+def tune_webview2():
+    """Windows: let the page save several files one after another. Without this, Edge WebView2 asks
+    "127.0.0.1 wants to download multiple files" from the second file on (the page is this app's own server)."""
+    try:
+        from webview.platforms import edgechromium
+    except Exception as e:  # noqa: BLE001
+        log('WebView2 not tuned:', repr(e))
+        return
+    original = edgechromium.EdgeChrome.on_webview_ready
+
+    def allow(sender, args):
+        try:
+            if str(args.PermissionKind) == 'MultipleAutomaticDownloads':
+                from Microsoft.Web.WebView2.Core import CoreWebView2PermissionState
+                args.State = CoreWebView2PermissionState.Allow
+        except Exception as e:  # noqa: BLE001
+            log('permission:', repr(e))
+
+    def on_webview_ready(self, sender, args):
+        original(self, sender, args)
+        if args.IsSuccess:
+            sender.CoreWebView2.PermissionRequested += allow
+
+    edgechromium.EdgeChrome.on_webview_ready = on_webview_ready
+
+
 def run_window(webview, proc, port, url, lang):
     w, h = window_size(webview)
     loc = dict(MENU_JA) if lang == 'ja' else {}
@@ -354,6 +380,8 @@ def run_window(webview, proc, port, url, lang):
             window.load_html(error_page(lang))
 
     webview.settings['ALLOW_DOWNLOADS'] = True             # ダウンロード（PDF などの保存）は保存先を聞く窓を出す
+    if os.name == 'nt':
+        tune_webview2()
     if os.environ.get('FIGAPP_SELFTEST_SAVE'):
         import selftest
         selftest.save_without_dialog(os.environ['FIGAPP_SELFTEST_SAVE'])

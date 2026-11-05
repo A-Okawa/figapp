@@ -153,6 +153,10 @@ def window(save):
         ok(t is not None, f'{tag}: PDF button pressed')
         time.sleep(5)
         photo(f'{tag}-2-save-dialog.png')
+        t = wait_for(lambda: os.path.exists(os.path.join(st, 'dialog_done.ready')), 120)
+        ok(t is not None, f'{tag}: Save pressed in the dialog')
+        time.sleep(1)
+        photo(f'{tag}-3-after-save.png')
         p.kill()                                                    # like a crash: the server must stop by itself
         p.wait(30)
     if spid:
@@ -177,6 +181,10 @@ def window(save):
         ok(res.get('exceptions_end') == 0, f'{tag}: no error after the downloads')
     else:
         ok(res.get('clicked_pdf') is True, f'{tag}: PDF button found')
+        ok((res.get('dialog') or {}).get('pressed'), f'{tag}: the save dialog was there ({res.get("dialog")})')
+        got = res.get('saved_by_dialog') or {}
+        ok(str(got.get('head', '')).startswith('%PDF') and got.get('bytes', 0) > 100,
+           f'{tag}: figure.pdf saved to {res.get("download_target")} through the dialog ({got.get("bytes")} bytes)')
     print(json.dumps(res, ensure_ascii=False, indent=1)[:3000])
     print('took', round(time.time() - t0, 1), 's')
     copy_logs(data, tag)

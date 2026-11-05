@@ -6,11 +6,13 @@ page's file input, clicks the PDF, SVG and settings (.json) download buttons and
 <FIGAPP_SELFTEST>/selftest.json. The build machine takes screenshots in between (marker files *.ready).
 
 FIGAPP_SELFTEST_SAVE=<folder>: downloads go straight into that folder (no save dialog), so the saved files can be checked.
-Without it the normal save dialog opens; the build machine photographs it and then ends the app.
+Without it the normal save dialog opens; the build machine photographs it, this presses its Save button, checks that the
+PDF arrived in the Downloads folder, and the build machine then ends the app.
 """
 import json
 import os
 import sys
+import threading
 import time
 
 CSV = 'x,y\\n1,2\\n2,4\\n3,9\\n'
@@ -99,11 +101,22 @@ def run(window, url, log):
     res['uploaded'] = bool(_poll(lambda: js("document.body.innerText.indexOf('selftest.csv') >= 0"), 60))
     time.sleep(3)
     dump()
-    if not save:                                           # 保存の窓を出して写真を撮ってもらう（窓は閉じない）
+    if not save:                                           # 本物の保存の窓：写真を撮ってもらい、「保存」を押す
+        target = os.path.join(downloads_folder(), 'figure.pdf')
+        res['download_target'] = target
+        if os.path.exists(target):
+            os.remove(target)
         res['clicked_pdf'] = js(CLICK_JS % "'PDF'")
         dump()
         mark('dialog')
         log('selftest: save dialog requested')
+        time.sleep(9)
+        res['dialog'] = press_save()
+        res['saved_by_dialog'] = _poll(lambda: _saved(os.path.dirname(target), 'figure.pdf'), 40)
+        res['files_in_downloads'] = sorted(os.listdir(os.path.dirname(target)))[:30]
+        dump()
+        mark('dialog_done')
+        log('selftest: dialog', res['dialog'], res['saved_by_dialog'])
         return
     res['downloads'] = {}
     for label, name in (('PDF', 'figure.pdf'), ('SVG', 'figure.svg'), ('PNG', 'figure.png'),
@@ -123,6 +136,69 @@ def run(window, url, log):
     time.sleep(4)
     if os.environ.get('FIGAPP_SELFTEST_CLOSE') == '1':
         window.destroy()
+
+
+def downloads_folder():
+    """The folder the save dialog starts in (the user's Downloads)."""
+    if os.name == 'nt':
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                r'Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders') as key:
+                return winreg.QueryValueEx(key, '{374DE290-123F-4565-9164-39C4925E467B}')[0]
+        except OSError:
+            pass
+    return os.path.join(os.path.expanduser('~'), 'Downloads')
+
+
+def press_save():
+    """Press Save in the open save dialog of this app, as a user would."""
+    out = {'pressed': False}
+    if sys.platform == 'darwin':
+        import AppKit
+        from PyObjCTools import AppHelper
+        done = threading.Event()
+
+        def press():
+            try:
+                w = AppKit.NSApp.modalWindow() or AppKit.NSApp.keyWindow()
+                out['window'] = str(w.className()) if w is not None else None
+                if w is not None and w.isKindOfClass_(AppKit.NSSavePanel):
+                    out['name'] = str(w.nameFieldStringValue())
+                    out['extension_hidden'] = bool(w.isExtensionHidden())
+                    w.ok_(None)
+                    out['pressed'] = True
+            except Exception as e:  # noqa: BLE001
+                out['error'] = repr(e)
+            done.set()
+
+        AppHelper.callAfter(press)
+        done.wait(20)
+    elif os.name == 'nt':
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+        found = []
+        proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+        def each(hwnd, _):
+            pid = wintypes.DWORD()
+            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            if pid.value == os.getpid() and user32.IsWindowVisible(hwnd):
+                cls = ctypes.create_unicode_buffer(64)
+                user32.GetClassNameW(hwnd, cls, 64)
+                if cls.value == '#32770':                  # the save dialog
+                    found.append(hwnd)
+            return True
+
+        user32.EnumWindows(proc(each), 0)
+        if found:
+            title = ctypes.create_unicode_buffer(256)
+            user32.GetWindowTextW(found[0], title, 256)
+            out['window'] = title.value
+            user32.PostMessageW(found[0], 0x0111, 1, 0)    # WM_COMMAND IDOK: the Save button
+            out['pressed'] = True
+    return out
 
 
 def save_without_dialog(folder):

@@ -1,9 +1,21 @@
-# 論文用グラフ作成アプリ（figapp）v1.13
+# 論文用グラフ作成アプリ（figapp）v1.14
 
 CSV をアップロードし、描き方と列を選び、軸・色・文字を整えて、PDF／SVG／PNG／TIFF と描いた値を保存するアプリです。
 設定は JSON で保存・読み込みでき、同じ見た目を別のデータにそのまま使い回せます。
 図の書式の初期値は Nature 系（Arial、7 pt、線 0.5 pt、外向きの目盛り）です。
 画面は 日本語・English・Tiếng Việt・ไทย で使えます（サイドバーのいちばん上で切り替え）。
+Web 版（Streamlit Community Cloud）と、Python もターミナルも要らない PC 版（Mac・Windows のアプリ）があります。
+
+## v1.14 の変更点（PC 版：Mac・Windows のアプリ）
+- **PC 版**：ダブルクリックで開くアプリにしました。Python・Anaconda・ターミナルは要りません。中身は Web 版と同じで、
+  アプリの窓の中に同じ画面が出ます。データはその PC の中だけで扱い、外には送りません（下の「PC 版（Mac・Windows のアプリ）」）。
+  - Mac（Apple シリコン、macOS 12 以降）は `.dmg`、Windows 10・11 はインストーラー（管理者の権限は不要）か ZIP。
+  - 「色の一覧」はユーザーのフォルダ（Mac は `~/Library/Application Support/figapp`、Windows は `%APPDATA%\figapp`）に保存し、
+    アプリを入れ替えても残ります。選んだ画面の言語も覚えて、次に開いたときもその言語で始まります。
+  - 窓を閉じると終わります（保存していない図や設定は消えるので、終了の前に確認が出ます）。
+  - PC 版の PDF・TIFF は、PC にある本物の Arial で描きます。
+- GitHub の `v1.14` のようなタグを付けると、GitHub Actions が Mac と Windows で PC 版を作り、実際の窓で確かめてから
+  Releases に置きます（`.github/workflows/desktop.yml`）。
 
 ## v1.13 の変更点（学生も使えるように）
 - **画面の言語を 4 つから選べる**：サイドバーのいちばん上の「🌐 Language / 言語」で、日本語・English・Tiếng Việt（ベトナム語）・ไทย（タイ語）。
@@ -156,6 +168,49 @@ CSV をアップロードし、描き方と列を選び、軸・色・文字を�
 - 棒グラフ：項目ごとに、その項目にある棒だけで幅を分けます（項目と系列が同じ列のとき、棒が目盛りの真上に来る）。
 - 描いた値（CSV）に、凡例の名前（label）と誤差棒の種類（error_bar）の列を足しました。
 
+## PC 版（Mac・Windows のアプリ）
+GitHub の Releases（https://github.com/A-Okawa/figapp/releases/latest ）から、PC に合ったファイルを 1 つダウンロードします。
+学生にはこのアドレスを伝えます。
+
+| PC | ファイル |
+|---|---|
+| Mac（Apple シリコン：M1 以降、macOS 12 以降） | `figapp-1.14-mac.dmg` |
+| Windows 10・11（64 ビット） | `figapp-1.14-windows-setup.exe`（インストーラー） |
+| Windows（インストーラーを使えない PC） | `figapp-1.14-windows.zip`（すべて展開して、`figapp` フォルダの `figapp.exe`） |
+
+**Mac**
+1. dmg を開き、`figapp` を「アプリケーション」へドラッグします。
+2. アプリケーションの figapp をダブルクリックします。「開いていません」「確認できません」と出たら「完了」を押します。
+3. システム設定 →「プライバシーとセキュリティ」を開き、下のほうの「“figapp”は Mac を保護するためにブロックされました」で「このまま開く」を押し、
+   パスワード（Touch ID）を入れて、もう一度「このまま開く」を押します。macOS 14 以前なら、control キーを押しながら figapp をクリック →「開く」→「開く」。
+4. 2 回目からはダブルクリックだけで開きます。
+
+**Windows**
+1. `figapp-1.14-windows-setup.exe` をダブルクリックします。「Windows によって PC が保護されました」と出たら「詳細情報」→「実行」。
+2. 案内に沿って進めると、`%LOCALAPPDATA%\Programs\figapp` に入り、スタートメニューとデスクトップに figapp ができます。
+
+最初の確認は、アプリに Apple・Microsoft の署名が無いために出ます（毎回は出ません）。最初の 1 回は開くまでに 1 分ほどかかることがあります。
+
+知っておくこと
+- **データ**：画面を作るサーバーはその PC の中（127.0.0.1）だけで動き、ほかの PC からはつながりません。CSV も図も外に送りません。
+- **終わり方**：窓を閉じます（確認が出ます）。Windows で Microsoft Edge WebView2 が無い古い PC では、窓の代わりにいつものブラウザで開きます。
+  そのときはサイドバーの下のほうの「アプリを終了」を押すか、タブを閉じて 2 分ほどたつと終わります。
+- **保存**：PDF などの保存ボタンを押すと、保存先を聞かれます。
+- **設定の場所**：色の一覧（`colors.csv`）・画面の言語（`prefs.json`）・ログ（`logs`）は、Mac は `~/Library/Application Support/figapp`、
+  Windows は `%APPDATA%\figapp` にあります。うまく開かないときは `logs` の中身を見ます。
+- **新しい版**：新しい dmg・インストーラーで上書きします（色の一覧は残ります）。
+- **削除**：Mac はアプリケーションの figapp をゴミ箱へ。Windows は「設定」→「アプリ」→ figapp →「アンインストール」。
+  設定まで消すときは、上の設定の場所のフォルダも消します。
+
+PC 版を作るとき（管理者向け）
+1. `figcore.py` の `APP_VERSION` を新しい版（例 `1.15`）にして `main` に push。
+2. 同じ版のタグを付けて push：`git tag v1.15 && git push origin v1.15`。
+3. GitHub Actions（`.github/workflows/desktop.yml`）が Mac（macos-15）と Windows（windows-2025）で作り、サーバーと実際のアプリの窓で
+   読み込み・保存・終了を確かめてから、Releases の `v1.15` に dmg・インストーラー・ZIP を置いて公開します。どちらかで失敗すると下書きのままです。
+   試しに作るだけなら `desktop` ブランチに push します（結果は下書きのリリース `desktop-ci` に置かれ、公開されません）。
+4. 中身：`desktop/launcher.py`（窓とサーバーの起動）、`desktop/figapp.spec`（PyInstaller の設定）、`desktop/installer.iss`（Windows のインストーラー）、
+   `desktop/requirements.txt`・`constraints.txt`（版の固定）、`desktop/ci/`（確かめるスクリプト）。
+
 ## 手元で動かす
 **普段使っている環境（Anaconda の base など）に `pip install` しないでください。** ほかのパッケージ（numpy など）の版が変わってしまいます。
 
@@ -282,7 +337,7 @@ python3 figcore.py 作業ファイル.zip --out out
 設定（.json）を使うときは、CSV のファイル名を設定に記録された名前と同じにしてください（作業ファイルなら CSV も中に入っています）。
 
 ## 書体
-Streamlit Cloud には Arial がないため、Arial と字幅が同じ Liberation Sans で描きます。
+Streamlit Cloud には Arial がないため、Arial と字幅が同じ Liberation Sans で描きます（PC 版は、Mac・Windows にある Arial で描きます）。
 - SVG は Arial を指定して保存するので、Illustrator で開けば Arial になる。
 - PDF・TIFF を本物の Arial で出したいときは、Mac で手元実行するか、上のコマンドを使う。
 
@@ -296,3 +351,5 @@ Streamlit Cloud には Arial がないため、Arial と字幅が同じ Liberati
 | `colors.csv` | 名前で選べる色の一覧（1 行に「名前,#RRGGBB」。アプリの「色の一覧」からも編集・保存できる） |
 | `i18n.py`、`i18n_text.py` | 画面の言語の切り替えと、英語・ベトナム語・タイ語の訳の表（日本語と英語は `app.py`・`figcore.py` の中に `ui('日本語', 'English')` で書いてある） |
 | `requirements.txt`、`packages.txt`、`.streamlit/config.toml` | 公開用の設定 |
+| `desktop/` | PC 版（Mac・Windows のアプリ）を作るためのもの：起動の仕組み、PyInstaller・インストーラーの設定、アイコン、確かめるスクリプト |
+| `.github/workflows/desktop.yml` | タグ（`v1.14` など）を付けると PC 版を作って Releases に置く手順（GitHub Actions） |
