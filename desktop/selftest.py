@@ -102,8 +102,10 @@ def run(window, url, log):
     res['uploaded'] = bool(_poll(lambda: js("document.body.innerText.indexOf('selftest.csv') >= 0"), 60))
     time.sleep(3)
     dump()
-    if not save:                                           # 本物の保存の窓：写真を撮ってもらい、名前を変えて「保存」を押す
-        target = os.path.join(downloads_folder(), RENAMED + '.pdf')   # 拡張子なしの名前を打っても .pdf になる
+    if not save:                                           # 本物の保存の窓：写真を撮ってもらい、「保存」を押す
+        # Windows は拡張子なしの名前を打って .pdf になるのを確かめる。Mac の保存の窓は別のプロセスで動いていて、ここからは
+        # 名前を打てない（.pdf が付いたまま表示されること・PDF の種類に限られていることを確かめ、そのまま保存する）
+        target = os.path.join(downloads_folder(), (RENAMED if os.name == 'nt' else 'figure') + '.pdf')
         res['download_target'] = target
         for old in (target, os.path.join(downloads_folder(), 'figure.pdf'), os.path.join(downloads_folder(), RENAMED)):
             if os.path.exists(old):
@@ -114,7 +116,7 @@ def run(window, url, log):
         log('selftest: save dialog requested')
         time.sleep(9)
         res['dialog'] = press_save(RENAMED)
-        res['saved_by_dialog'] = _poll(lambda: _saved(os.path.dirname(target), RENAMED + '.pdf'), 40)
+        res['saved_by_dialog'] = _poll(lambda: _saved(os.path.dirname(target), os.path.basename(target)), 40)
         res['files_in_downloads'] = sorted(os.listdir(os.path.dirname(target)))[:30]
         dump()
         mark('dialog_done')
@@ -154,7 +156,8 @@ def downloads_folder():
 
 
 def press_save(new_name):
-    """Type `new_name` (without an extension) into the open save dialog of this app and press Save, as a user would."""
+    """Press Save in the open save dialog of this app, as a user would; on Windows first type `new_name` (without an
+    extension) as the file name."""
     out = {'pressed': False}
     if sys.platform == 'darwin':
         import AppKit
@@ -169,7 +172,6 @@ def press_save(new_name):
                     out['name'] = str(w.nameFieldStringValue())
                     out['extension_hidden'] = bool(w.isExtensionHidden())
                     out['types'] = [str(t.identifier()) for t in (w.allowedContentTypes() or [])]
-                    w.setNameFieldStringValue_(new_name)
                     out['url'] = str(w.URL().path()) if w.URL() is not None else None
                     # the panel runs in another process (its Save button cannot be pressed from here): end the
                     # modal session with OK, as the Save button does

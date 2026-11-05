@@ -184,7 +184,13 @@ def window(save):
         ok((res.get('dialog') or {}).get('pressed'), f'{tag}: the save dialog was there ({res.get("dialog")})')
         got = res.get('saved_by_dialog') or {}
         ok(str(got.get('head', '')).startswith('%PDF') and got.get('bytes', 0) > 100,
-           f'{tag}: name typed without .pdf, saved as {res.get("download_target")} through the dialog ({got.get("bytes")} bytes)')
+           f'{tag}: saved as {res.get("download_target")} through the dialog ({got.get("bytes")} bytes)')
+        d = res.get('dialog') or {}
+        if MAC:
+            ok(d.get('name') == 'figure.pdf' and not d.get('extension_hidden') and d.get('types') == ['com.adobe.pdf'],
+               f'{tag}: the dialog shows figure.pdf and keeps the PDF type ({d.get("name")}, {d.get("types")})')
+        else:
+            ok(d.get('typed') == 'selftest-renamed', f'{tag}: a name without .pdf was typed ({d.get("typed")}) and .pdf was added')
     print(json.dumps(res, ensure_ascii=False, indent=1)[:3000])
     print('took', round(time.time() - t0, 1), 's')
     copy_logs(data, tag)
