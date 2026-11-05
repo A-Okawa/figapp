@@ -1,0 +1,6 @@
+# パスワードなどの秘密は GitHub に上げない（Streamlit Cloud では「Settings」→「Secrets」に書く）
+.streamlit/secrets.toml
+__pycache__/
+*.pyc
+.venv/
+.DS_Store

@@ -1,0 +1,48 @@
+{
+ "figure": {
+  "width_mm": 45,
+  "height_mm": 50
+ },
+ "layers": [
+  {
+   "name": "H",
+   "type": "bar",
+   "source": "demo_bars.csv",
+   "x": "region",
+   "y": "h",
+   "series": "region",
+   "unit": "indent",
+   "err": "se",
+   "points": true,
+   "in_legend": false
+  }
+ ],
+ "x": {
+  "categorical": true,
+  "categories": "SiC-free, 10 vol% SiC"
+ },
+ "y": {
+  "label": "Crack-healing ratio $H$",
+  "min": "-0.1",
+  "max": "0.9",
+  "ticks": "step",
+  "step": "0.2"
+ },
+ "series": {
+  "SiC-free": {
+   "label": "SiC-free",
+   "color": "#BDBDBD",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  },
+  "10 vol% SiC": {
+   "label": "10 vol% SiC",
+   "color": "#D55E00",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  }
+ },
+ "hlines": "0"
+}

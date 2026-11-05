@@ -1,0 +1,86 @@
+{
+ "version": 1,
+ "figure": {
+  "width_mm": 60,
+  "height_mm": 50,
+  "letter": "a"
+ },
+ "sources": {
+  "fig1a.csv": {
+   "reshape": {
+    "enabled": true,
+    "value_cols": [
+     "l_9.8N",
+     "l_19.6N",
+     "l_49N",
+     "l_98N"
+    ],
+    "var_name": "P_N",
+    "value_name": "l_um",
+    "parse": "first"
+   },
+   "exclude": ""
+  }
+ },
+ "layers": [
+  {
+   "name": "as-sintered",
+   "type": "mean_error",
+   "source": "fig1a.csv",
+   "x": "P_N",
+   "y": "l_um",
+   "series": "composition",
+   "unit": "indent",
+   "err": "sd",
+   "points": true,
+   "connect": true,
+   "dodge": 0.03
+  }
+ ],
+ "x": {
+  "label": "Indentation load $P$ (N)",
+  "scale": "log",
+  "min": "7.5",
+  "max": "130",
+  "ticks": "list",
+  "list": "9.8, 19.6, 49, 98",
+  "minor": "auto"
+ },
+ "y": {
+  "label": "Crack length $l$ (μm)",
+  "scale": "linear",
+  "min": "0",
+  "max": "300",
+  "ticks": "step",
+  "step": "100",
+  "minor": "n",
+  "minor_n": 1
+ },
+ "series": {
+  "5": {
+   "label": "5 vol% SiC",
+   "color": "#0072B2",
+   "marker": "o",
+   "filled": true,
+   "ls": "-"
+  },
+  "10": {
+   "label": "10 vol% SiC",
+   "color": "#D55E00",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  }
+ },
+ "series_order": "5, 10",
+ "legend": {
+  "show": true,
+  "loc": "upper left"
+ },
+ "n_display": {
+  "style": "eq",
+  "note": true,
+  "unit": "indentations",
+  "loc": "lower right"
+ }
+}

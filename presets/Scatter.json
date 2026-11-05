@@ -1,0 +1,57 @@
+{
+ "figure": {
+  "width_mm": 70,
+  "height_mm": 55
+ },
+ "layers": [
+  {
+   "name": "h vs l",
+   "type": "scatter",
+   "source": "demo_scatter.csv",
+   "x": "l_i_um",
+   "y": "h",
+   "series": "T_C"
+  }
+ ],
+ "x": {
+  "label": "Initial crack length $l_i$ (μm)",
+  "min": "0",
+  "max": "260",
+  "ticks": "step",
+  "step": "50"
+ },
+ "y": {
+  "label": "$h$",
+  "min": "-0.1",
+  "max": "1"
+ },
+ "palette": "blues",
+ "legend": {
+  "show": true,
+  "loc": "upper right",
+  "title": "Annealed, 1 h"
+ },
+ "series": {
+  "750": {
+   "label": "750 °C",
+   "color": "#519CCC",
+   "marker": "o",
+   "filled": true,
+   "ls": "-"
+  },
+  "950": {
+   "label": "950 °C",
+   "color": "#1966AD",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  },
+  "1050": {
+   "label": "1050 °C",
+   "color": "#08306B",
+   "marker": "^",
+   "filled": true,
+   "ls": "-"
+  }
+ }
+}

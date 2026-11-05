@@ -1,0 +1,105 @@
+{
+ "figure": {
+  "width_mm": 88,
+  "height_mm": 70
+ },
+ "sources": {
+  "demo_spectra.csv": {
+   "reshape": {
+    "enabled": true,
+    "value_cols": [
+     "5vol_750C",
+     "5vol_950C",
+     "5vol_1050C"
+    ],
+    "var_name": "sample",
+    "value_name": "intensity",
+    "parse": "none"
+   }
+  }
+ },
+ "layers": [
+  {
+   "name": "XRD",
+   "type": "line",
+   "source": "demo_spectra.csv",
+   "x": "two_theta_deg",
+   "y": "intensity",
+   "series": "sample",
+   "norm": "max",
+   "offset": 1.15,
+   "trace_labels": true,
+   "in_legend": false
+  },
+  {
+   "name": "ICDD",
+   "type": "ticks",
+   "source": "demo_ticks.csv",
+   "x": "two_theta_deg",
+   "y": "two_theta_deg",
+   "series": "phase",
+   "tick_style": "vline",
+   "tick_y": 0.015,
+   "tick_h": 0.035,
+   "tick_gap": 0.05
+  }
+ ],
+ "x": {
+  "label": "2$\\theta$ (deg.)",
+  "min": "20",
+  "max": "50",
+  "ticks": "step",
+  "step": "5",
+  "minor": "n",
+  "minor_n": 4
+ },
+ "y": {
+  "label": "Intensity (a.u.)",
+  "min": "-0.45",
+  "max": "3.6",
+  "hide_ticklabels": true,
+  "minor": "off"
+ },
+ "series": {
+  "5vol_750C": {
+   "label": "750 °C",
+   "color": "#519CCC",
+   "marker": "none",
+   "filled": true,
+   "ls": "-"
+  },
+  "5vol_950C": {
+   "label": "950 °C",
+   "color": "#1966AD",
+   "marker": "none",
+   "filled": true,
+   "ls": "-"
+  },
+  "5vol_1050C": {
+   "label": "1050 °C",
+   "color": "#08306B",
+   "marker": "none",
+   "filled": true,
+   "ls": "-"
+  },
+  "beta-Yb2Si2O7": {
+   "label": "β-Yb$_2$Si$_2$O$_7$",
+   "color": "#1A1A1A",
+   "marker": "o",
+   "filled": true,
+   "ls": "-"
+  },
+  "beta-SiC": {
+   "label": "β-SiC",
+   "color": "#D55E00",
+   "marker": "v",
+   "filled": true,
+   "ls": "-"
+  }
+ },
+ "legend": {
+  "show": true,
+  "loc": "upper right"
+ },
+ "series_order": "5vol_750C, 5vol_950C, 5vol_1050C, beta-Yb2Si2O7, beta-SiC"
+}

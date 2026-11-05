@@ -1,0 +1,76 @@
+{
+ "figure": {
+  "width_mm": 70,
+  "height_mm": 55
+ },
+ "layers": [
+  {
+   "name": "5 vol%",
+   "uid": "L1",
+   "type": "mean_error",
+   "source": "demo_5vol.csv",
+   "x": "Temperature (°C)",
+   "y": "Crack length (µm)",
+   "series": "",
+   "err": "sd",
+   "points": true,
+   "connect": true,
+   "dodge": 0.0,
+   "n_show": "above"
+  },
+  {
+   "name": "10 vol%",
+   "uid": "L2",
+   "type": "mean_error",
+   "source": "demo_10vol.csv",
+   "x": "Temperature (°C)",
+   "y": "Crack length (µm)",
+   "series": "",
+   "err": "sd",
+   "points": true,
+   "connect": true,
+   "dodge": 0.0,
+   "n_show": "below"
+  }
+ ],
+ "x": {
+  "label": "Annealing temperature (°C)",
+  "min": "700",
+  "max": "1200",
+  "ticks": "step",
+  "step": "100"
+ },
+ "y": {
+  "label": "Crack length $l$ (μm)",
+  "min": "0",
+  "max": "90",
+  "ticks": "step",
+  "step": "20"
+ },
+ "series": {
+  "@L1": {
+   "label": "5 vol% SiC",
+   "color": "#0072B2",
+   "marker": "o",
+   "filled": true,
+   "ls": "-"
+  },
+  "@L2": {
+   "label": "10 vol% SiC",
+   "color": "#D55E00",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  }
+ },
+ "legend": {
+  "show": true,
+  "loc": "upper right"
+ },
+ "n_display": {
+  "style": "eq",
+  "note": true,
+  "unit": "cracks",
+  "loc": "lower left"
+ }
+}

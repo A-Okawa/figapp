@@ -1,0 +1,75 @@
+{
+ "figure": {
+  "width_mm": 88,
+  "height_mm": 66
+ },
+ "sources": {
+  "demo_closure.csv": {
+   "derived": "dl_um = `l_before_um` - `l_after_um`"
+  }
+ },
+ "layers": [
+  {
+   "name": "閉じた量",
+   "uid": "L1",
+   "type": "mean_error",
+   "source": "demo_closure.csv",
+   "x": "l_before_um",
+   "y": "dl_um",
+   "series": "temperature_C",
+   "group": "load_N",
+   "unit": "indent",
+   "err": "sd",
+   "points": true,
+   "pts": "row",
+   "connect": false,
+   "xbars": true,
+   "dodge": 0.0,
+   "n_show": "none"
+  }
+ ],
+ "x": {
+  "label": "Initial crack length, $l$_{i} (µm)",
+  "min": "0",
+  "max": "250",
+  "ticks": "step",
+  "step": "50"
+ },
+ "y": {
+  "label": "Absolute crack-length reduction, Δ$l$ (µm)",
+  "min": "0"
+ },
+ "series": {
+  "750": {
+   "label": "750 °C",
+   "color": "#0072B2",
+   "marker": "o",
+   "filled": true,
+   "ls": "-"
+  },
+  "950": {
+   "label": "950 °C",
+   "color": "#D55E00",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  },
+  "1050": {
+   "label": "1050 °C",
+   "color": "#009E73",
+   "marker": "^",
+   "filled": true,
+   "ls": "-"
+  }
+ },
+ "legend": {
+  "show": true,
+  "loc": "upper left",
+  "ncol": 3
+ },
+ "n_display": {
+  "note": true,
+  "unit": "indentations",
+  "loc": "lower right"
+ }
+}

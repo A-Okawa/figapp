@@ -1,0 +1,7 @@
+# Streamlit Community Cloud 用：動作を確かめた版に固定（Python 3.12）。新しい版が出ても勝手に変わらない。
+# 手元の Anaconda なら入れなくても `streamlit run app.py` で動きます（Streamlit 1.32 でも確認）。
+streamlit==1.66.1
+matplotlib==3.11.2
+numpy==2.5.4
+pandas==3.0.6
+pillow==13.0.0

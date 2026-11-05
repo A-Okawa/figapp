@@ -1,0 +1,75 @@
+{
+ "figure": {
+  "width_mm": 75,
+  "height_mm": 55
+ },
+ "layers": [
+  {
+   "name": "Hv",
+   "type": "mean_error",
+   "source": "demo_twin.csv",
+   "x": "T_C",
+   "y": "Hv_GPa",
+   "series": "composition",
+   "unit": "indent",
+   "err": "sd",
+   "points": false,
+   "axis": "left",
+   "label_suffix": ", $H_\\mathrm{V}$"
+  },
+  {
+   "name": "K",
+   "type": "mean_error",
+   "source": "demo_twin.csv",
+   "x": "T_C",
+   "y": "K_MPam05",
+   "series": "composition",
+   "unit": "indent",
+   "err": "sd",
+   "points": false,
+   "axis": "right",
+   "in_legend": true,
+   "ov_ls": "--",
+   "ov_fill": "open",
+   "label_suffix": ", $K_\\mathrm{IFR}$"
+  }
+ ],
+ "x": {
+  "label": "Annealing temperature (°C)",
+  "min": "700",
+  "max": "1200",
+  "ticks": "step",
+  "step": "100"
+ },
+ "y": {
+  "label": "$H_\\mathrm{V}$ (GPa)",
+  "min": "6",
+  "max": "11"
+ },
+ "y2": {
+  "label": "$K_\\mathrm{IFR}$ (MPa m$^{1/2}$)",
+  "min": "0",
+  "max": "10"
+ },
+ "series": {
+  "5": {
+   "label": "5 vol% SiC",
+   "color": "#0072B2",
+   "marker": "o",
+   "filled": true,
+   "ls": "-"
+  },
+  "10": {
+   "label": "10 vol% SiC",
+   "color": "#D55E00",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  }
+ },
+ "legend": {
+  "show": true,
+  "loc": "lower right",
+  "ncol": 2
+ }
+}

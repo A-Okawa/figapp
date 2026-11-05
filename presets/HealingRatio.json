@@ -1,0 +1,77 @@
+{
+ "figure": {
+  "width_mm": 70,
+  "height_mm": 55,
+  "letter": ""
+ },
+ "sources": {
+  "heal.csv": {
+   "derived": "h = 1 - l_after / l_before\nH_pct = 100 * h"
+  }
+ },
+ "layers": [
+  {
+   "name": "H",
+   "type": "mean_error",
+   "source": "heal.csv",
+   "x": "T_C",
+   "y": "H_pct",
+   "series": "P_N",
+   "unit": "indent",
+   "err": "se",
+   "points": true,
+   "connect": true,
+   "dodge": 0.04
+  }
+ ],
+ "x": {
+  "label": "Annealing temperature (°C)",
+  "min": "700",
+  "max": "1100",
+  "ticks": "list",
+  "list": "750, 950, 1050"
+ },
+ "y": {
+  "label": "Crack-healing ratio $H$ (%)",
+  "min": "0",
+  "max": "100",
+  "ticks": "step",
+  "step": "20"
+ },
+ "palette": "blues",
+ "legend": {
+  "show": true,
+  "loc": "upper left",
+  "title": ""
+ },
+ "series": {
+  "9.81": {
+   "label": "9.8 N",
+   "color": "#519CCC",
+   "marker": "o",
+   "filled": true,
+   "ls": "-"
+  },
+  "19.61": {
+   "label": "19.6 N",
+   "color": "#2979B9",
+   "marker": "s",
+   "filled": true,
+   "ls": "-"
+  },
+  "49.03": {
+   "label": "49 N",
+   "color": "#0A549E",
+   "marker": "^",
+   "filled": true,
+   "ls": "-"
+  },
+  "98.07": {
+   "label": "98 N",
+   "color": "#08306B",
+   "marker": "D",
+   "filled": true,
+   "ls": "-"
+  }
+ }
+}
