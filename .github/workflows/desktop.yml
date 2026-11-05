@@ -1,9 +1,11 @@
 name: PC app (Mac, Windows)
 
 # figapp の PC 版（Mac の figapp.app と Windows の figapp.exe）を作って確かめる。
-# - desktop ブランチへの push：試しのビルド。アプリとテストの記録・画面の写真は下書きのリリース「desktop-ci」に置く（公開されない）
-# - v で始まるタグ（例 v1.14）：配布用。figcore.py の APP_VERSION と同じ版のタグにする。Mac と Windows の両方ができて
-#   テストが通ったら、そのタグのリリースを公開する（どちらかが失敗したら下書きのまま）
+# - desktop ブランチへの push：作って確かめる。テストの記録・画面の写真は下書きのリリース「desktop-ci」に、テストが通ったアプリは
+#   下書きのリリース「figapp v<APP_VERSION>」に置く（下書きは公開されない）。GitHub の Releases でその下書きの
+#   「Publish release」を押すと公開される（そのときタグ v<APP_VERSION> ができる）。公開済みの版のリリースは変えない
+# - v で始まるタグ（例 v1.14）の push：figcore.py の APP_VERSION と同じ版のタグにする。Mac と Windows の両方ができて
+#   テストが通ったら、そのタグのリリースにアプリを置いて公開する（どちらかが失敗したら下書きのまま）
 on:
   push:
     branches: [desktop]
@@ -23,7 +25,7 @@ jobs:
     outputs:
       version: ${{ steps.ids.outputs.version }}
       ci_release: ${{ steps.ids.outputs.ci_release }}
-      tag_release: ${{ steps.ids.outputs.tag_release }}
+      app_release: ${{ steps.ids.outputs.app_release }}
     steps:
       - uses: actions/checkout@v4
       - id: ids
@@ -35,7 +37,9 @@ jobs:
           echo "ci_release=$(python3 desktop/ci/release.py ensure desktop-ci 'PC app checks (not for students)' true '')" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME does not match APP_VERSION $version"; exit 1; }
-            echo "tag_release=$(python3 desktop/ci/release.py ensure "$GITHUB_REF_NAME" "figapp $GITHUB_REF_NAME" true desktop/release_notes.md)" >> "$GITHUB_OUTPUT"
+            echo "app_release=$(python3 desktop/ci/release.py ensure "$GITHUB_REF_NAME" "figapp $GITHUB_REF_NAME" true desktop/release_notes.md)" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_release=$(python3 desktop/ci/release.py ensure "v$version" "figapp v$version" true desktop/release_notes.md draft-only)" >> "$GITHUB_OUTPUT"
           fi
 
   build:
@@ -150,9 +154,9 @@ jobs:
           for f in out/*; do [ -f "$f" ] && files+=("$f"); done
           python desktop/ci/release.py upload "${{ needs.prepare.outputs.ci_release }}" "${files[@]}"
 
-      - name: Apps to the release of the tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: python desktop/ci/release.py upload "${{ needs.prepare.outputs.tag_release }}" out/*
+      - name: Apps to the release of this version (a draft until it is published)
+        if: needs.prepare.outputs.app_release != ''
+        run: python desktop/ci/release.py upload "${{ needs.prepare.outputs.app_release }}" out/*
 
   publish:
     needs: [prepare, build]
@@ -162,4 +166,4 @@ jobs:
       - uses: actions/checkout@v4
       - env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 desktop/ci/release.py publish "${{ needs.prepare.outputs.tag_release }}"
+        run: python3 desktop/ci/release.py publish "${{ needs.prepare.outputs.app_release }}"

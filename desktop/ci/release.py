@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """GitHub releases for the PC app, through the REST API (GITHUB_TOKEN of the workflow).
 
-  python release.py ensure TAG TITLE DRAFT(true|false) NOTES_FILE   → prints the release id (creates it when missing)
+  python release.py ensure TAG TITLE DRAFT(true|false) NOTES_FILE [draft-only]
+        → prints the release id (creates it when missing; fills an empty description from NOTES_FILE).
+          draft-only: prints nothing when the release exists and is already published (it is not changed then)
   python release.py upload RELEASE_ID FILE...                        (replaces assets of the same name)
   python release.py publish RELEASE_ID                               (draft → published, marked as the latest)
 """
@@ -36,14 +38,25 @@ def releases():
         page += 1
 
 
-def ensure(tag, title, draft, notes_file):
+def ensure(tag, title, draft, notes_file, only_draft=False):
+    notes = open(notes_file, encoding='utf-8').read() if notes_file and os.path.exists(notes_file) else ''
+    sha = os.environ.get('GITHUB_SHA', '')                 # a draft's tag is made at this commit when it is published
     for r in releases():
         if r['tag_name'] == tag:
+            if only_draft and not r['draft']:
+                return ''
+            change = {}
+            if notes and not (r.get('body') or '').strip():
+                change['body'] = notes
+            if r['draft'] and sha:
+                change['target_commitish'] = sha
+            if change:
+                call('PATCH', f'{API}/repos/{REPO}/releases/{r["id"]}', change)
             return r['id']
-    notes = open(notes_file, encoding='utf-8').read() if notes_file and os.path.exists(notes_file) else ''
-    r = call('POST', f'{API}/repos/{REPO}/releases', {'tag_name': tag, 'name': title, 'body': notes,
-                                                      'draft': draft == 'true', 'prerelease': False})
-    return r['id']
+    new = {'tag_name': tag, 'name': title, 'body': notes, 'draft': draft == 'true', 'prerelease': False}
+    if sha:
+        new['target_commitish'] = sha
+    return call('POST', f'{API}/repos/{REPO}/releases', new)['id']
 
 
 def upload(rid, files):
@@ -67,7 +80,7 @@ def publish(rid):
 if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'ensure':
-        print(ensure(*sys.argv[2:6]))
+        print(ensure(*sys.argv[2:6], only_draft=sys.argv[6:7] == ['draft-only']))
     elif cmd == 'upload':
         upload(sys.argv[2], sys.argv[3:])
     elif cmd == 'publish':

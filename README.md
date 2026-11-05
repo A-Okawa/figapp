@@ -206,12 +206,14 @@ GitHub の Releases（https://github.com/A-Okawa/figapp/releases/latest ）か�
 - **削除**：Mac はアプリケーションの figapp をゴミ箱へ。Windows は「設定」→「アプリ」→ figapp →「アンインストール」。
   設定まで消すときは、上の設定の場所のフォルダも消します。
 
-PC 版を作るとき（管理者向け）
-1. `figcore.py` の `APP_VERSION` を新しい版（例 `1.15`）にして `main` に push。
-2. 同じ版のタグを付けて push：`git tag v1.15 && git push origin v1.15`。
-3. GitHub Actions（`.github/workflows/desktop.yml`）が Mac（macos-15）と Windows（windows-2025）で作り、サーバーと実際のアプリの窓で
-   読み込み・保存・終了を確かめてから、Releases の `v1.15` に dmg・インストーラー・ZIP を置いて公開します。どちらかで失敗すると下書きのままです。
-   試しに作るだけなら `desktop` ブランチに push します（結果は下書きのリリース `desktop-ci` に置かれ、公開されません）。
+PC 版を作るとき（管理者向け。ターミナルは要りません）
+1. `figcore.py` の `APP_VERSION` を新しい版（例 `1.15`）にして、`desktop` ブランチと `main` に push します。
+2. GitHub Actions（`.github/workflows/desktop.yml`）が Mac（macos-15）と Windows（windows-2025）で PC 版を作り、サーバーと実際のアプリの窓で
+   読み込み・保存（保存の窓を含む）・終了を確かめます（10 分ほど）。テストが通ったアプリは、下書きのリリース「figapp v1.15」に置かれます。
+   テストの記録と画面の写真は、下書きのリリース「desktop-ci」の `report-mac.zip`・`report-windows.zip` にあります（どちらの下書きも公開されません）。
+3. GitHub の https://github.com/A-Okawa/figapp/releases で「figapp v1.15」の下書きを開き（右上の鉛筆）、「Publish release」を押すと公開され、
+   タグ `v1.15` ができます。学生は https://github.com/A-Okawa/figapp/releases/latest から最新版を入れられます。
+   （ターミナルで `git tag v1.15 && git push origin v1.15` としても、作って確かめてから公開します。公開済みの版のリリースは書き換えません）
 4. 中身：`desktop/launcher.py`（窓とサーバーの起動）、`desktop/figapp.spec`（PyInstaller の設定）、`desktop/installer.iss`（Windows のインストーラー）、
    `desktop/requirements.txt`・`constraints.txt`（版の固定）、`desktop/ci/`（確かめるスクリプト）。
 
