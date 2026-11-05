@@ -4,3 +4,11 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
+# PC 版を作るときにできるもの
+/build/
+/dist/
+/installer/
+/out/
+/wheels/
+/dmg/
+/report-*/

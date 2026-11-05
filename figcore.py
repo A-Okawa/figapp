@@ -44,7 +44,7 @@ RENDER_LOCK = threading.RLock()
 
 MM = 1 / 25.4
 VERSION = 1
-APP_VERSION = '1.13'
+APP_VERSION = '1.14'
 
 # ------------------------------------------------------------------------------------------------ defaults
 PALETTES = {

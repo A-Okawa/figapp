@@ -5,7 +5,7 @@ CSV をアップロード → レイヤー（描き方と列）を選ぶ → 軸
 設定は JSON で保存・読み込みでき、同じ見た目を別のデータに使い回せる。描画は figcore.py（コマンドラインでも同じ結果）。
 起動：streamlit run app.py
 """
-import copy, hmac, html, inspect, json, os, re, sys, threading, unicodedata
+import copy, hmac, html, inspect, json, os, re, shutil, sys, threading, unicodedata
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -32,6 +32,12 @@ if 'lang' not in st.session_state:
 # 共有のサーバー（Streamlit Community Cloud など）で動いているか。そこでは、アプリのフォルダに書く操作（色の一覧の保存）を
 # その人の画面だけのものにする。Community Cloud はリポジトリを /mount/src/ に置く。ほかのサーバーでは FIGAPP_SHARED=1 にする
 SHARED = HERE.replace('\\', '/').startswith('/mount/src/') or os.environ.get('FIGAPP_SHARED') == '1'
+# PC 版（desktop/launcher.py が起動した Mac・Windows のアプリ）。FIGAPP_DESKTOP は window（アプリの窓）か browser（ブラウザで開いた）。
+# 自分の PC だけで使うので共有でもパスワードもなし。色の一覧と画面の言語は FIGAPP_DATA_DIR に置く（アプリの中には書かない）
+DESKTOP = os.environ.get('FIGAPP_DESKTOP', '')
+DATA_DIR = os.environ.get('FIGAPP_DATA_DIR', '') if DESKTOP else ''
+if DESKTOP:
+    SHARED = False
 
 TYPE_LABEL = {'mean_error': ui('平均 ± 誤差', 'Mean ± error'), 'bar': ui('棒グラフ', 'Bar chart'), 'line': ui('線（スペクトル・曲線）', 'Line (spectra, curves)'), 'scatter': ui('散布図', 'Scatter plot'), 'ticks': ui('ティック（ICDD など）', 'Ticks (ICDD etc.)')}
 ERR_LABEL = {'sd': 'SD', 'se': 'SE', 'ci95': ui('95% 信頼区間', '95% confidence interval'), 'minmax': ui('最小〜最大', 'Min–max'), 'column': ui('列の値を使う', 'Values from a column'), 'none': ui('なし', 'None')}
@@ -87,11 +93,19 @@ def secret(name, default=''):
     return default if v is None else str(v)
 
 
-SHARED = SHARED or secret('shared').strip().lower() in ('1', 'true', 'yes')
+if not DESKTOP:
+    SHARED = SHARED or secret('shared').strip().lower() in ('1', 'true', 'yes')
 # 画面の言語（いちばん上）。図に入る文字は入力したままで、画面の表示だけが替わる
 st.sidebar.radio('🌐 Language / 言語', i18n.CODES, format_func=i18n.NAMES.get, key='lang', horizontal=True)
+if DATA_DIR and ss.get('_lang_saved') != ss.lang:   # PC 版は選んだ言語を覚えて、次に開いたときもその言語で始める
+    try:
+        with open(os.path.join(DATA_DIR, 'prefs.json'), 'w', encoding='utf-8') as _fh:
+            json.dump({'lang': ss.lang}, _fh)
+        ss._lang_saved = ss.lang
+    except OSError:
+        pass
 # パスワード（Streamlit Cloud の Secrets に password = "…" を書いたときだけ。手元で動かすときは聞かない）
-PASSWORD = secret('password')
+PASSWORD = '' if DESKTOP else secret('password')
 if PASSWORD and not ss.get('authenticated'):
     st.title(ui('📈 グラフ作成', '📈 Graph maker'))
     with st.form('login'):
@@ -215,7 +229,12 @@ SUBSUP_HELP = (ui('文字を選んで Ctrl+I で斜体、Ctrl+B で太字、Ctrl
                   'm^{1/2})`, `Yb_{2}Si_{2}O_{7}`, `cm^-1`). Text inside `$...$` is a formula.'))
 
 
-COLORS_FILE = os.path.join(HERE, 'colors.csv')
+COLORS_FILE = os.path.join(DATA_DIR or HERE, 'colors.csv')
+if DATA_DIR and not os.path.exists(COLORS_FILE):    # PC 版の初回：同梱の一覧を写して始める（アップデートしても自分の一覧は残る）
+    try:
+        shutil.copyfile(os.path.join(HERE, 'colors.csv'), COLORS_FILE)
+    except OSError:
+        COLORS_FILE = os.path.join(HERE, 'colors.csv')
 OTHER = ui('その他（ピッカーで選ぶ）', 'Other (use the picker)')
 
 
@@ -382,8 +401,13 @@ if sb.button(ui('設定を初期化', 'Reset settings'), help=ui('レイヤー�
     ss._pending_auto = list(files)
     clear_widgets()
     st.rerun()
-sb.caption(ui('データはこの画面を開いている間だけ使われ、サーバーには残りません。ページを閉じる・再読み込みする前に「作業ファイルを保存」で手元に保存しておくと、続きから再開できます。', 'Your data are used only while this page is open and are not kept on the server. Before you close '
-              'or reload the page, keep a copy with “Save work file” to carry on later.'))
+if DESKTOP:
+    sb.caption(ui('データはこの PC の中だけで扱い、ほかの場所には送りません。アプリを閉じる前に「作業ファイルを保存」で保存しておくと、続きから再開できます。',
+                  'Your data stay on this PC and are not sent anywhere. Before you close the app, keep a copy with “Save work '
+                  'file” to carry on later.'))
+else:
+    sb.caption(ui('データはこの画面を開いている間だけ使われ、サーバーには残りません。ページを閉じる・再読み込みする前に「作業ファイルを保存」で手元に保存しておくと、続きから再開できます。', 'Your data are used only while this page is open and are not kept on the server. Before you close '
+                  'or reload the page, keep a copy with “Save work file” to carry on later.'))
 if ss.get('_copied'):
     _d, _k = ss.pop('_copied')
     if _d:
@@ -395,7 +419,13 @@ if ss.get('_formula_added'):
     st.toast(ui('「{_s}」に計算列「{_c}」を足しました', 'Added the calculated column “{_c}” to “{_s}”', _s=_s, _c=_c) + (ui('。この CSV のレイヤーの y にしました。', '. It is now the y of the layers using this CSV.') if _y else ui('。', '.')))
 if ss.get('_opened'):
     st.toast(ui('「{v}」を開きました（CSV {v2} 個と設定）。', 'Opened “{v}” ({v2} CSV files and the settings).', v=ss.pop('_opened'), v2=len(ss.saved_files)))
-sb.caption(f'figapp v{fc.APP_VERSION}')
+sb.caption(f'figapp v{fc.APP_VERSION}' + (ui('（PC 版）', ' (desktop)') if DESKTOP else ''))
+if DESKTOP == 'browser':                            # ブラウザで開いた PC 版：サーバーを止める手段（窓の版は窓を閉じれば止まる）
+    if sb.button(ui('アプリを終了', 'Quit the app'), key='desktop_quit',
+                 help=ui('この PC で動いている figapp を止めます。止めたあとは、このタブを閉じてください。',
+                         'Stops figapp running on this PC. Close this tab afterwards.')):
+        sb.success(ui('終了しました。このタブは閉じてかまいません。', 'figapp has stopped. You can close this tab.'))
+        threading.Timer(1.0, os._exit, args=(0,)).start()
 
 # ---------------------------------------------------------------------------------------------- data
 raws = {}
@@ -1117,6 +1147,13 @@ with tabs[3]:
                               'choose the same colour by name. “Use on this screen” makes the list yours, on this screen (your '
                               'browser) only. To use it next time, keep it with “Save colors.csv” and paste it here when you come '
                               'back. The shared list is changed by the administrator in colors.csv on GitHub.'))
+            elif DATA_DIR:
+                st.caption(ui('1 行に 1 つ「名前,#RRGGBB」。温度や組成の名前で登録しておくと、どの図でも同じ色を名前で選べます。'
+                              '「保存」でこの PC の colors.csv（下の場所）に書き、次に開いたときも同じ一覧になります。',
+                              'One “name,#RRGGBB” per line. Register colours under the names of temperatures or compositions to '
+                              'choose the same colour by name in every figure. “Save” writes colors.csv on this PC (location '
+                              'below), so the list is there next time.'))
+                st.caption(f'`{COLORS_FILE}`')
             else:
                 st.caption(ui('1 行に 1 つ「名前,#RRGGBB」。温度や組成の名前で登録しておくと、どの図でも同じ色を名前で選べます。'
                               '「保存」でアプリのフォルダの colors.csv に書き、次に開いたときも同じ一覧になります。',
