@@ -1515,4 +1515,7 @@ INLINE = [
     ('figapp has stopped. You can close this tab.',
      'figapp đã dừng. Bạn có thể đóng thẻ này.',
      'figapp หยุดทำงานแล้ว ปิดแท็บนี้ได้เลย'),
+    ('Download the desktop app (Mac, Windows)',
+     'Tải ứng dụng cho máy tính (Mac, Windows)',
+     'ดาวน์โหลดแอปสำหรับคอมพิวเตอร์ (Mac, Windows)'),
 ]

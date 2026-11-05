@@ -420,6 +420,9 @@ if ss.get('_formula_added'):
 if ss.get('_opened'):
     st.toast(ui('「{v}」を開きました（CSV {v2} 個と設定）。', 'Opened “{v}” ({v2} CSV files and the settings).', v=ss.pop('_opened'), v2=len(ss.saved_files)))
 sb.caption(f'figapp v{fc.APP_VERSION}' + (ui('（PC 版）', ' (desktop)') if DESKTOP else ''))
+if not DESKTOP:                                     # Web 版から PC 版（Mac・Windows のアプリ）へ
+    sb.caption(f"[{ui('PC 版（Mac・Windows のアプリ）をダウンロード', 'Download the desktop app (Mac, Windows)')}]"
+               '(https://github.com/A-Okawa/figapp/releases/latest)')
 if DESKTOP == 'browser':                            # ブラウザで開いた PC 版：サーバーを止める手段（窓の版は窓を閉じれば止まる）
     if sb.button(ui('アプリを終了', 'Quit the app'), key='desktop_quit',
                  help=ui('この PC で動いている figapp を止めます。止めたあとは、このタブを閉じてください。',

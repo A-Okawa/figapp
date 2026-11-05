@@ -16,6 +16,7 @@ import threading
 import time
 
 CSV = 'x,y\\n1,2\\n2,4\\n3,9\\n'
+RENAMED = 'selftest-renamed'                               # 保存の窓で打つ名前（拡張子なし）
 
 UPLOAD_JS = """(function () {
   var inputs = document.querySelectorAll('[data-testid="stSidebar"] input[type="file"]');
@@ -101,18 +102,19 @@ def run(window, url, log):
     res['uploaded'] = bool(_poll(lambda: js("document.body.innerText.indexOf('selftest.csv') >= 0"), 60))
     time.sleep(3)
     dump()
-    if not save:                                           # 本物の保存の窓：写真を撮ってもらい、「保存」を押す
-        target = os.path.join(downloads_folder(), 'figure.pdf')
+    if not save:                                           # 本物の保存の窓：写真を撮ってもらい、名前を変えて「保存」を押す
+        target = os.path.join(downloads_folder(), RENAMED + '.pdf')   # 拡張子なしの名前を打っても .pdf になる
         res['download_target'] = target
-        if os.path.exists(target):
-            os.remove(target)
+        for old in (target, os.path.join(downloads_folder(), 'figure.pdf'), os.path.join(downloads_folder(), RENAMED)):
+            if os.path.exists(old):
+                os.remove(old)
         res['clicked_pdf'] = js(CLICK_JS % "'PDF'")
         dump()
         mark('dialog')
         log('selftest: save dialog requested')
         time.sleep(9)
-        res['dialog'] = press_save()
-        res['saved_by_dialog'] = _poll(lambda: _saved(os.path.dirname(target), 'figure.pdf'), 40)
+        res['dialog'] = press_save(RENAMED)
+        res['saved_by_dialog'] = _poll(lambda: _saved(os.path.dirname(target), RENAMED + '.pdf'), 40)
         res['files_in_downloads'] = sorted(os.listdir(os.path.dirname(target)))[:30]
         dump()
         mark('dialog_done')
@@ -151,8 +153,8 @@ def downloads_folder():
     return os.path.join(os.path.expanduser('~'), 'Downloads')
 
 
-def press_save():
-    """Press Save in the open save dialog of this app, as a user would."""
+def press_save(new_name):
+    """Type `new_name` (without an extension) into the open save dialog of this app and press Save, as a user would."""
     out = {'pressed': False}
     if sys.platform == 'darwin':
         import AppKit
@@ -166,6 +168,8 @@ def press_save():
                 if w is not None and w.isKindOfClass_(AppKit.NSSavePanel):
                     out['name'] = str(w.nameFieldStringValue())
                     out['extension_hidden'] = bool(w.isExtensionHidden())
+                    out['types'] = [str(t.identifier()) for t in (w.allowedContentTypes() or [])]
+                    w.setNameFieldStringValue_(new_name)
                     w.ok_(None)
                     out['pressed'] = True
             except Exception as e:  # noqa: BLE001
@@ -196,6 +200,29 @@ def press_save():
             title = ctypes.create_unicode_buffer(256)
             user32.GetWindowTextW(found[0], title, 256)
             out['window'] = title.value
+            boxes = []
+
+            def child(hwnd, _):                            # the file name box: Edit in ComboBox in ComboBoxEx32
+                cls = ctypes.create_unicode_buffer(64)
+                user32.GetClassNameW(hwnd, cls, 64)
+                if cls.value == 'Edit':
+                    up = user32.GetParent(hwnd)
+                    up2 = user32.GetParent(up) if up else None
+                    c1, c2 = ctypes.create_unicode_buffer(64), ctypes.create_unicode_buffer(64)
+                    if up:
+                        user32.GetClassNameW(up, c1, 64)
+                    if up2:
+                        user32.GetClassNameW(up2, c2, 64)
+                    if c1.value == 'ComboBox' and c2.value == 'ComboBoxEx32':
+                        boxes.append(hwnd)
+                return True
+
+            user32.EnumChildWindows(found[0], proc(child), 0)
+            if boxes:
+                text = ctypes.create_unicode_buffer(260)
+                user32.GetWindowTextW(boxes[0], text, 260)
+                out['name'] = text.value
+                user32.SendMessageW(boxes[0], 0x000C, 0, ctypes.c_wchar_p(new_name))   # WM_SETTEXT
             user32.PostMessageW(found[0], 0x0111, 1, 0)    # WM_COMMAND IDOK: the Save button
             out['pressed'] = True
     return out

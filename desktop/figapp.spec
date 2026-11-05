@@ -44,9 +44,10 @@ _DROP = ('flight', 'arrow_s3', '_s3fs', 'gcsfs', 'azurefs', 'hdfs', 'orc', 'cuda
 
 def _keep(dest):
     d = dest.replace('\\', '/')
-    if not d.startswith('pyarrow/'):
-        return True
     name = d.rsplit('/', 1)[-1].lower()
+    # pyarrow の中のものと、PyInstaller がいちばん上に作る pyarrow のライブラリへのリンク（libarrow_flight.so.2600 など）
+    if not (d.startswith('pyarrow/') or name.startswith(('libarrow', 'arrow', 'libparquet', 'parquet'))):
+        return True
     if d.startswith('pyarrow/include/') or d.startswith('pyarrow/tests/') or name.endswith(('.pyx', '.pxd', '.pxi', '.h', '.cc')):
         return False
     return not any(k in name for k in _DROP)

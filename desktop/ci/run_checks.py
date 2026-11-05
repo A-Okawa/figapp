@@ -184,7 +184,7 @@ def window(save):
         ok((res.get('dialog') or {}).get('pressed'), f'{tag}: the save dialog was there ({res.get("dialog")})')
         got = res.get('saved_by_dialog') or {}
         ok(str(got.get('head', '')).startswith('%PDF') and got.get('bytes', 0) > 100,
-           f'{tag}: figure.pdf saved to {res.get("download_target")} through the dialog ({got.get("bytes")} bytes)')
+           f'{tag}: name typed without .pdf, saved as {res.get("download_target")} through the dialog ({got.get("bytes")} bytes)')
     print(json.dumps(res, ensure_ascii=False, indent=1)[:3000])
     print('took', round(time.time() - t0, 1), 's')
     copy_logs(data, tag)
@@ -193,7 +193,7 @@ def window(save):
 
 def installer(setup):
     log = os.path.join(REPORT, 'installer-setup.log')
-    r = subprocess.run([setup, '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', f'/LOG={log}'], timeout=900)
+    r = subprocess.run([setup, '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', f'/LOG={log}'], timeout=900)
     ok(r.returncode == 0, f'installer ran without questions (code {r.returncode})')
     home = os.path.join(os.environ['LOCALAPPDATA'], 'Programs', 'figapp')
     exe = os.path.join(home, 'figapp.exe')

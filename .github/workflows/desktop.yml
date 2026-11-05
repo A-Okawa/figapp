@@ -92,6 +92,8 @@ jobs:
       - name: Mac – signature and oldest macOS
         if: runner.os == 'macOS'
         run: |
+          find dist/figapp.app -type l ! -exec test -e {} \; -print | tee "$REPORT/broken-links.txt"
+          [ ! -s "$REPORT/broken-links.txt" ] || { echo "links to missing files in the app"; exit 1; }
           codesign --verify --deep --strict --verbose=2 dist/figapp.app 2>&1 | tee "$REPORT/codesign-verify.txt"
           codesign -dvv dist/figapp.app 2>&1 | tee "$REPORT/codesign-info.txt"
           python desktop/ci/run_checks.py minos dist/figapp.app

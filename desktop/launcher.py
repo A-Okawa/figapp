@@ -44,6 +44,7 @@ TEXT = {
                 'en': 'figapp is already running. Use its window in the taskbar.',
                 'vi': 'figapp đang chạy. Hãy dùng cửa sổ figapp trên thanh tác vụ.',
                 'th': 'figapp กำลังทำงานอยู่แล้ว โปรดใช้หน้าต่าง figapp บนแถบงาน'},
+    'all_files': {'ja': 'すべてのファイル', 'en': 'All files', 'vi': 'Tất cả các tệp', 'th': 'ไฟล์ทั้งหมด'},
     'quit': {'ja': 'figapp を終了しますか？保存していない図や設定は消えます。',
              'en': 'Quit figapp? Figures and settings you have not saved will be lost.',
              'vi': 'Thoát figapp? Hình và thiết lập chưa lưu sẽ bị mất.',
@@ -361,6 +362,76 @@ def tune_webview2():
     edgechromium.EdgeChrome.on_webview_ready = on_webview_ready
 
 
+def keep_file_type_in_save_dialog(lang):
+    """The save dialog keeps the type of the file, so a name typed in the dialog still ends in .pdf, .svg, .png, .tif …
+    Windows: "PDF (*.pdf)" etc. as the file type (pywebview offers only "All files", and a typed name then has no
+    extension). Mac: the extension is shown and kept."""
+    if os.name == 'nt':
+        try:
+            from webview.platforms import edgechromium
+        except Exception as e:  # noqa: BLE001
+            log('save dialog not changed:', repr(e))
+            return
+        WinForms = edgechromium.WinForms
+
+        def on_download_starting(self, sender, args):
+            name = os.path.basename(str(args.ResultFilePath))
+            ext = os.path.splitext(name)[1].lstrip('.').lower()
+            dialog = WinForms.SaveFileDialog()
+            folder = os.path.dirname(str(args.ResultFilePath))            # Edge の既定（ダウンロード）
+            if folder:
+                dialog.InitialDirectory = folder
+            every = TEXT['all_files'][lang] + ' (*.*)|*.*'
+            if ext:
+                dialog.Filter = f'{ext.upper()} (*.{ext})|*.{ext}|{every}'
+                dialog.DefaultExt = ext
+                dialog.AddExtension = True
+            else:
+                dialog.Filter = every
+            dialog.FileName = name
+            dialog.RestoreDirectory = True
+            if dialog.ShowDialog(self.form) == WinForms.DialogResult.OK:
+                args.ResultFilePath = dialog.FileName
+            else:
+                args.Cancel = True
+
+        edgechromium.EdgeChrome.on_download_starting = on_download_starting
+    elif sys.platform == 'darwin':
+        try:
+            import AppKit
+            import Foundation
+            from webview.platforms import cocoa
+        except Exception as e:  # noqa: BLE001
+            log('save dialog not changed:', repr(e))
+            return
+        try:
+            from UniformTypeIdentifiers import UTType
+        except Exception:  # noqa: BLE001
+            UTType = None
+
+        class FigappDownloadDelegate(cocoa.BrowserView.DownloadDelegate):
+            def download_decideDestinationUsingResponse_suggestedFilename_completionHandler_(
+                    self, download, response, suggested, handler):
+                name = str(suggested)
+                panel = AppKit.NSSavePanel.savePanel()
+                downloads = Foundation.NSSearchPathForDirectoriesInDomains(
+                    Foundation.NSDownloadsDirectory, Foundation.NSUserDomainMask, True)[0]
+                panel.setDirectoryURL_(Foundation.NSURL.fileURLWithPath_(downloads))
+                panel.setNameFieldStringValue_(name)
+                ext = os.path.splitext(name)[1].lstrip('.')
+                kind = UTType.typeWithFilenameExtension_(ext) if (ext and UTType is not None) else None
+                if kind is not None:
+                    panel.setAllowedContentTypes_([kind])
+                panel.setExtensionHidden_(False)
+                panel.setCanSelectHiddenExtension_(True)
+                if panel.runModal() == 1:                                  # NSModalResponseOK
+                    handler(panel.URL())
+                else:
+                    handler(None)
+
+        cocoa.BrowserView.DownloadDelegate = FigappDownloadDelegate
+
+
 def run_window(webview, proc, port, url, lang):
     w, h = window_size(webview)
     loc = dict(MENU_JA) if lang == 'ja' else {}
@@ -380,6 +451,7 @@ def run_window(webview, proc, port, url, lang):
             window.load_html(error_page(lang))
 
     webview.settings['ALLOW_DOWNLOADS'] = True             # ダウンロード（PDF などの保存）は保存先を聞く窓を出す
+    keep_file_type_in_save_dialog(lang)
     if os.name == 'nt':
         tune_webview2()
     if os.environ.get('FIGAPP_SELFTEST_SAVE'):
