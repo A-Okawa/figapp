@@ -170,7 +170,10 @@ def press_save(new_name):
                     out['extension_hidden'] = bool(w.isExtensionHidden())
                     out['types'] = [str(t.identifier()) for t in (w.allowedContentTypes() or [])]
                     w.setNameFieldStringValue_(new_name)
-                    w.ok_(None)
+                    out['url'] = str(w.URL().path()) if w.URL() is not None else None
+                    # the panel runs in another process (its Save button cannot be pressed from here): end the
+                    # modal session with OK, as the Save button does
+                    AppKit.NSApp.stopModalWithCode_(1)
                     out['pressed'] = True
             except Exception as e:  # noqa: BLE001
                 out['error'] = repr(e)
@@ -220,7 +223,12 @@ def press_save(new_name):
                 text = ctypes.create_unicode_buffer(260)
                 user32.GetWindowTextW(boxes[0], text, 260)
                 out['name'] = text.value
-                user32.SendMessageW(boxes[0], 0x000C, 0, ctypes.c_wchar_p(new_name))   # WM_SETTEXT
+                user32.SendMessageW(boxes[0], 0x00B1, 0, -1)                   # EM_SETSEL: select the name
+                for ch in new_name:                                            # and type over it
+                    user32.SendMessageW(boxes[0], 0x0102, ord(ch), 0)          # WM_CHAR
+                user32.GetWindowTextW(boxes[0], text, 260)
+                out['typed'] = text.value
+            time.sleep(0.5)
             user32.PostMessageW(found[0], 0x0111, 1, 0)    # WM_COMMAND IDOK: the Save button
             out['pressed'] = True
     return out
