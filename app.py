@@ -1100,6 +1100,20 @@ with tabs[2]:
             with c3:
                 A['fmt'] = S(ui('目盛りの数字', 'Tick labels'), f'A|{a}|fmt', list(FMT_LABEL), A.get('fmt', 'auto'), fmt=FMT_LABEL.get)
             A['hide_ticklabels'] = W(st.checkbox, ui('目盛りの数字を出さない（強度 a.u. など）', 'Hide the tick labels (e.g. intensity in a.u.)'), f'A|{a}|hide', A.get('hide_ticklabels', False))
+            if a == 'y2':
+                c1, c2 = st.columns([0.6, 0.4])
+                with c1:
+                    A['color_mode'] = S(ui('軸の色（線・目盛り・数字・ラベル）', 'Axis colour (line, ticks, numbers, label)'), 'A|y2|cmode',
+                                        ['none', 'series', 'custom'], A.get('color_mode', 'none'),
+                                        fmt=lambda v: {'none': ui('枠線と同じ（黒）', 'Same as the frame (black)'),
+                                                       'series': ui('右の軸の系列の色に合わせる', 'Match the series on the right axis'),
+                                                       'custom': ui('色を選ぶ', 'Choose a colour')}[v],
+                                        help=ui('どの点を右の軸で読むかが、色で分かるようにします。「系列の色に合わせる」は、右の軸に描いた最初の系列の色を使います。'
+                                                '色だけに頼らず、記号の形や凡例でも区別してください。',
+                                                'Shows by colour which points are read on the right axis. “Match the series” uses the colour of the first series drawn on the right axis. '
+                                                'Do not rely on colour alone: tell the series apart by marker shape or the legend as well.'))
+                if A['color_mode'] == 'custom':
+                    A['color'] = W(c2.color_picker, ui('色', 'Colour'), 'A|y2|col', A.get('color') or '#7E57C2')
 
 # ④ series
 keys = fc.series_keys(cfg, tables)

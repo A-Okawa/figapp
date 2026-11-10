@@ -44,7 +44,7 @@ RENDER_LOCK = threading.RLock()
 
 MM = 1 / 25.4
 VERSION = 1
-APP_VERSION = '1.14'
+APP_VERSION = '1.15'
 
 # ------------------------------------------------------------------------------------------------ defaults
 PALETTES = {
@@ -137,7 +137,8 @@ def t975(df):
 def axis_default(label=''):
     # auto_label: the label follows the column name of the first layer on this axis until the user types one
     return dict(label=label, auto_label=not label, scale='linear', min='', max='', ticks='auto', step='', list='', ticklabels='', minor='auto',
-                minor_n=4, fmt='auto', hide_ticklabels=False, categorical=False, categories='')
+                minor_n=4, fmt='auto', hide_ticklabels=False, categorical=False, categories='',
+                color_mode='none', color='')
 
 
 def column_label(name):
@@ -938,6 +939,27 @@ def fmt_func(fmt):
     return None
 
 
+def axis_color(A, series_color=None):
+    """Colour of the second y axis: 'none' (as the frame), 'series' (the first series drawn on it) or 'custom' (A['color'])."""
+    mode = A.get('color_mode', 'none')
+    if mode == 'series':
+        return series_color or None
+    if mode == 'custom':
+        c = str(A.get('color') or '').strip()
+        return c if re.fullmatch(r'#[0-9A-Fa-f]{6}', c) else None
+    return None
+
+
+def color_y_axis(ax, ax2, col):
+    """Draw the second y axis (line, ticks, tick labels, label) in col. The right frame line of the main axes is hidden
+    so that it does not show through the coloured axis line."""
+    ax.spines['right'].set_visible(False)
+    ax2.spines['right'].set_visible(True)
+    ax2.spines['right'].set_color(col)
+    ax2.tick_params(axis='y', which='both', colors=col)
+    ax2.yaxis.label.set_color(col)
+
+
 def apply_axis(ax, A, which, F):
     """A: axis settings; which: 'x' or 'y'."""
     axis = ax.xaxis if which == 'x' else ax.yaxis
@@ -1008,6 +1030,7 @@ def render(cfg, tables, preview_dpi=None):
     fig.get_layout_engine().set(w_pad=1.5 / 72, h_pad=1.5 / 72, wspace=0, hspace=0)
     ax = fig.add_subplot(111)
     ax2 = None
+    y2_series_color = None            # colour of the first series drawn on the second y axis (for “axis colour = series colour”)
     plotted, notes, handles = [], [], {}
     fits, fit_texts = [], []          # (axis, fit, colour, line style, line width, to the axis ends), (equation, colour)
 
@@ -1121,6 +1144,8 @@ def render(cfg, tables, preview_dpi=None):
             tax = ax2
         sers = [k for k in keys if k in set(f['_series'])]
         right = tax is not ax
+        if right and y2_series_color is None and sers:
+            y2_series_color = layer_style(cfg, L, sers[0])['color']
         lw = num_or_none(L.get('lw')) or F['line_lw']
         ms = num_or_none(L.get('ms')) or F['marker_size']
         t = L['type']
@@ -1405,6 +1430,9 @@ def render(cfg, tables, preview_dpi=None):
     apply_axis(ax, cfg['y'], 'y', F)
     if ax2 is not None:
         apply_axis(ax2, cfg['y2'], 'y', F)
+        col = axis_color(cfg['y2'], y2_series_color)
+        if col:
+            color_y_axis(ax, ax2, col)
     for tax in pct_axes:              # 100 % 積み上げ棒の軸は、範囲を指定していなければ 0–100 ちょうど
         A = cfg['y2'] if (ax2 is not None and tax is ax2) else cfg['y']
         if num_or_none(A.get('min')) is None and num_or_none(A.get('max')) is None and A.get('scale') != 'log':
