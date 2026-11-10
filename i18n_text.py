@@ -5,6 +5,21 @@ A text missing here is shown in English. {Placeholders}, `code` and **bold** mus
 
 # (English, Vietnamese, Thai)
 INLINE = [
+    ('Axis colour (line, ticks, numbers, label)',
+     'Màu trục (đường, vạch chia, số, nhãn)',
+     'สีของแกน (เส้น ขีดสเกล ตัวเลข ป้ายชื่อ)'),
+    ('Same as the frame (black)',
+     'Giống khung (đen)',
+     'เหมือนกรอบ (ดำ)'),
+    ('Match the series on the right axis',
+     'Theo màu chuỗi dữ liệu trên trục phải',
+     'ตามสีของชุดข้อมูลบนแกนขวา'),
+    ('Choose a colour',
+     'Chọn màu',
+     'เลือกสี'),
+    ('Shows by colour which points are read on the right axis. “Match the series” uses the colour of the first series drawn on the right axis. Do not rely on colour alone: tell the series apart by marker shape or the legend as well.',
+     'Cho biết bằng màu những điểm nào được đọc trên trục phải. “Theo màu chuỗi dữ liệu” dùng màu của chuỗi đầu tiên vẽ trên trục phải. Đừng chỉ dựa vào màu: hãy phân biệt các chuỗi bằng hình dạng ký hiệu hoặc chú giải nữa.',
+     'แสดงด้วยสีว่าจุดใดอ่านค่าจากแกนขวา “ตามสีของชุดข้อมูล” จะใช้สีของชุดข้อมูลแรกที่วาดบนแกนขวา อย่าพึ่งสีเพียงอย่างเดียว ให้แยกชุดข้อมูลด้วยรูปทรงของสัญลักษณ์หรือคำอธิบายสัญลักษณ์ด้วย'),
     ('Select text and press Ctrl+I for italic, Ctrl+B for bold, Ctrl+, (comma) for subscript, Ctrl+. (period) for superscript (⌘ also works on a Mac). The box shows codes such as `<i>l</i>`, `_{i}`, `^{2}`; press Enter to update the figure. Typing the codes works too (e.g. `<i>K</i>_{IC} (MPa m^{1/2})`, `Yb_{2}Si_{2}O_{7}`, `cm^-1`). Text inside `$...$` is a formula.',
      'Chọn chữ rồi nhấn Ctrl+I để in nghiêng, Ctrl+B để in đậm, Ctrl+, (dấu phẩy) cho chỉ số dưới, Ctrl+. (dấu chấm) cho chỉ số trên (trên Mac có thể dùng ⌘). Ô nhập hiển thị các mã như `<i>l</i>`, `_{i}`, `^{2}`; nhấn Enter để cập nhật hình. Gõ trực tiếp các mã này cũng được (ví dụ `<i>K</i>_{IC} (MPa m^{1/2})`, `Yb_{2}Si_{2}O_{7}`, `cm^-1`). Chữ nằm trong `$...$` là công thức.',
      'เลือกข้อความแล้วกด Ctrl+I เพื่อทำตัวเอียง Ctrl+B ตัวหนา Ctrl+, (จุลภาค) ตัวห้อย Ctrl+. (จุด) ตัวยก (บน Mac ใช้ ⌘ ได้) ช่องกรอกจะแสดงรหัส เช่น `<i>l</i>`, `_{i}`, `^{2}` กด Enter เพื่ออัปเดตรูป จะพิมพ์รหัสเองก็ได้ (เช่น `<i>K</i>_{IC} (MPa m^{1/2})`, `Yb_{2}Si_{2}O_{7}`, `cm^-1`) ข้อความภายใน `$...$` จะเป็นสูตรคณิตศาสตร์'),
