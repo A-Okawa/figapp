@@ -44,7 +44,7 @@ RENDER_LOCK = threading.RLock()
 
 MM = 1 / 25.4
 VERSION = 1
-APP_VERSION = '1.15'
+APP_VERSION = '1.16'
 
 # ------------------------------------------------------------------------------------------------ defaults
 PALETTES = {
@@ -571,7 +571,7 @@ def default_label(cfg, k):
 def nice_label(s):
     """A value typed in plain ASCII in a CSV, as it is printed in the figure: '38-63 um' → '38–63 µm', '<38um' → '<38 µm'
     (Excel's Shift_JIS CSV cannot keep µ or –, so the CSV can stay ASCII)."""
-    t = re.sub(r'(?<=\d)\s*(?:u|μ|µ)m\b', ' µm', str(s))
+    t = re.sub(r'(?<=\d)\s*(?:u|μ|µ)m\b', ' µm', fig_text(str(s)))
     return re.sub(r'(\d)\s*-\s*(?=\d[\d.]*\s*(?:µm|mm|nm|°C|%))', '\\1–', t)
 
 
@@ -1117,7 +1117,7 @@ def render(cfg, tables, preview_dpi=None):
             y = m + b if where == 'above' else m - a
             if logy and y <= 0:
                 y = m
-            tax.annotate(tmpl.format(n=int(n)), (x, y), xytext=(0, 2.0 if where == 'above' else -2.0), textcoords='offset points',
+            tax.annotate(fig_text(tmpl.format(n=int(n))), (x, y), xytext=(0, 2.0 if where == 'above' else -2.0), textcoords='offset points',
                          ha='center', va='bottom' if where == 'above' else 'top', fontsize=F['note_pt'], color=color, zorder=4)
 
     rng = np.random.default_rng(0)
@@ -1480,7 +1480,7 @@ def render(cfg, tables, preview_dpi=None):
     if ND.get('note') and n_all:
         txt = n_note_text(n_errs, n_all, ND.get('unit'))
         px, py, ha, va = NOTE_POS.get(ND.get('loc', 'lower right'), NOTE_POS['lower right'])
-        ax.text(px, py, txt, transform=ax.transAxes, ha=ha, va=va, fontsize=F['note_pt'], color='#4D4D4D', zorder=5)
+        ax.text(px, py, fig_text(txt), transform=ax.transAxes, ha=ha, va=va, fontsize=F['note_pt'], color='#4D4D4D', zorder=5)
     Lg = cfg['legend']
     items = [(k, h) for k, h in handles.items() if str(k).strip()]
     if Lg.get('show') and items:
@@ -1496,7 +1496,7 @@ def render(cfg, tables, preview_dpi=None):
         else:
             ax.legend(hs, labs, loc=loc, **kw)
     if F.get('letter'):
-        ttl = ax.set_title(F['letter'], loc='left', fontsize=F['letter_pt'], fontweight='bold', pad=5)
+        ttl = ax.set_title(fig_text(F['letter']), loc='left', fontsize=F['letter_pt'], fontweight='bold', pad=5)
         ttl.set_x(float(F.get('letter_x', -0.15)))
     if seg_labels:
         put_segment_values(fig, seg_labels, F['tick_pt'])
@@ -1696,9 +1696,30 @@ def _mathrm(t):
     return re.sub(r'([+\-])', r'{\1}', t)
 
 
+# 図の書体（Arial、Cloud では字幅が同じ Liberation Sans）に無い文字を、同じ意味の文字に直してから描く。そのままだと □ になる。
+# 日本語入力で入りやすい全角の英数字・記号（°Ｃ の Ｃ、（ ）、％、＿ など）→ 半角、全角スペース → 半角、℃ → °C、℉ → °F、
+# Å（オングストローム記号）→ Å、K（ケルビン記号）→ K、〜 → ~、・ → ·、°に似た ºC・˚C → °C。かな・漢字はそのまま。
+# ＄ と ＼ は数式の記号（$ と \）になってしまうので変えない
+_FIG_CHARS = {c: c - 0xFEE0 for c in range(0xFF01, 0xFF5F) if c not in (0xFF04, 0xFF3C)}
+_FIG_CHARS.update({0x3000: ' ', 0x2103: '°C', 0x2109: '°F', 0x212B: 'Å', 0x212A: 'K', 0x301C: '~', 0x30FB: '·'})
+_DEG_LIKE = re.compile(r'[º˚](?=\s?[CF](?![A-Za-z]))')
+
+
+def fig_text(s):
+    """Text as it is written into the figure: characters the figure font has no glyph for, replaced by the same
+    character it has ('°Ｃ' → '°C', '℃' → '°C', 'TEMP（℃）' → 'TEMP (°C)', 'ºC' → '°C'). Japanese kana and kanji stay."""
+    if s is None:
+        return s
+    s = str(s)
+    if s.isascii():
+        return s
+    s = re.sub(r'(?<=[A-Za-z0-9)\]])（', ' （', s)          # 'TEMP（℃）' → 'TEMP (°C)'（英数字のあとの括弧の前に空白）
+    return _DEG_LIKE.sub('°', s.translate(_FIG_CHARS))
+
+
 def rich(s):
     """Text for the figure: 'K_{IC} (MPa m^{1/2})', 'Yb_{2}Si_{2}O_{7}', 'cm^-1', 'Δ<i>l</i>' (italic l), '<b>a</b>'."""
-    s = '' if s is None else str(s)
+    s = '' if s is None else fig_text(s)
     if not any(ch in s for ch in '_^<'):
         return s
     if len(re.findall(r'(?<!\\)\$', s)) % 2:          # an odd number of $: leave it as it is
